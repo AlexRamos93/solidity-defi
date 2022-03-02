@@ -9,8 +9,6 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "./interfaces/ISwapRouter.sol";
 import "./Math.sol";
 
-// import "hardhat/console.sol";
-
 interface ILendingPool {
     function deposit(
         address asset,
@@ -56,21 +54,22 @@ contract BondToken is ERC20Burnable, Ownable, Math {
     uint256 public baseRate = 20000000000000000;
     uint256 public fixedAnnuBorrowRate = 300000000000000000;
 
-    address private constant WETH9 = 0xd0A1E359811322d97991E03f863a0C30C2cF029C;
     ILendingPool public constant aave =
         ILendingPool(0xE0fBa4Fc209b4948668006B2bE61711b7f465bAe);
-    IWETHGateway public constant weth =
+    IWETHGateway public constant wethGateway =
         IWETHGateway(0xA61ca04DF33B72b235a8A28CfB535bb7A5271B70);
     IERC20 public constant dai =
         IERC20(0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD);
     IERC20 public constant aDai =
         IERC20(0xdCf0aF9e59C002FA3AA091a46196b37530FD48a8);
     IERC20 public constant aWeth =
-        IERC20(0x1F85D0dc45332D00aead98D26db0735350F80D18);
+        IERC20(0x87b1f4cf9BD63f7BBD3eE1aD04E8F52540349347);
     AggregatorV3Interface internal constant priceFeed =
         AggregatorV3Interface(0x9326BFA02ADD2366b30bacB125260Af641031331);
     IUniswapRouter public constant uniswapRouter =
         IUniswapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+    IERC20 private constant weth =
+        IERC20(0xd0A1E359811322d97991E03f863a0C30C2cF029C);
 
     mapping(address => uint256) private usersCollateral;
     mapping(address => uint256) private usersBorrowed;
@@ -89,7 +88,7 @@ contract BondToken is ERC20Burnable, Ownable, Math {
         require(_amount <= balanceOf(msg.sender), "Not enough bonds!");
         uint256 daiToReceive = mulExp(_amount, getExchangeRate());
         totalDeposit -= daiToReceive;
-        burnFrom(msg.sender, _amount);
+        burn(_amount);
         _withdrawDaiFromAave(daiToReceive);
     }
 
@@ -103,17 +102,14 @@ contract BondToken is ERC20Burnable, Ownable, Math {
     function removeCollateral(uint256 _amount) external {
         uint256 wethPrice = uint256(_getLatestPrice());
         uint256 collateral = usersCollateral[msg.sender];
+        require(collateral > 0, "Dont have any collateral");
         uint256 borrowed = usersBorrowed[msg.sender];
-        uint256 amountLeft = collateral.mul(wethPrice).sub(borrowed);
-        uint256 amountToRemove = _amount.mul(wethPrice);
-        require(
-            amountToRemove >= amountLeft,
-            "Not enough collateral to remove"
-        );
+        uint256 amountLeft = mulExp(collateral, wethPrice).sub(borrowed);
+        uint256 amountToRemove = mulExp(_amount, wethPrice);
+        require(amountToRemove < amountLeft, "Not enough collateral to remove");
         usersCollateral[msg.sender] -= _amount;
         totalCollateral -= _amount;
         _withdrawWethFromAave(_amount);
-        weth.withdrawETH(address(aave), _amount, msg.sender);
         payable(address(this)).transfer(_amount);
     }
 
@@ -209,12 +205,12 @@ contract BondToken is ERC20Burnable, Ownable, Math {
     }
 
     function _sendWethToAave(uint256 _amount) internal {
-        weth.depositETH{value: _amount}(address(aave), address(this), 0);
+        wethGateway.depositETH{value: _amount}(address(aave), address(this), 0);
     }
 
     function _withdrawWethFromAave(uint256 _amount) internal {
-        aWeth.allowance(address(this), address(weth));
-        weth.withdrawETH(address(aave), _amount, address(this));
+        aWeth.approve(address(wethGateway), _amount);
+        wethGateway.withdrawETH(address(aave), _amount, address(this));
     }
 
     function getCollateral() external view returns (uint256) {
@@ -261,7 +257,7 @@ contract BondToken is ERC20Burnable, Ownable, Math {
         require(_amount > 0, "Must pass non 0 amount");
 
         uint256 deadline = block.timestamp + 15; // using 'now' for convenience
-        address tokenIn = WETH9;
+        address tokenIn = address(weth);
         address tokenOut = address(dai);
         uint24 fee = 3000;
         address recipient = address(this);

@@ -1,6 +1,6 @@
 /**
  *
- * TODO TESTS USING MOCKS
+ * TODO: TESTS USING MOCKS
  *
  */
 
@@ -22,20 +22,10 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 let addr1: SignerWithAddress;
 let addr2: SignerWithAddress;
 
-describe("Bond Token Contract", async () => {
-  // it("should test", async () => {
-  //   const Contract: BondToken__factory = await ethers.getContractFactory(
-  //     "BondToken"
-  //   );
-  //   const instance: BondToken = await Contract.deploy();
-  //   await instance.deployed();
-  //   const aqui = await instance.bondAsset(ethers.utils.parseEther("100"));
-  //   console.log(aqui);
-  // });
-});
+describe("Bond Token Contract", async () => {});
 
 // const setup = async () => {
-//   [addr1, addr2] = await ethers.getSigners();
+// [addr1, addr2] = await ethers.getSigners();
 //   fakeContract = await smock.mock("BondToken");
 //   fakeInstance = await fakeContract.deploy();
 //   await fakeInstance.deployed();
