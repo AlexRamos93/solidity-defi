@@ -74,7 +74,7 @@ contract BondToken is ERC20Burnable, Ownable, Math {
     mapping(address => uint256) private usersCollateral;
     mapping(address => uint256) private usersBorrowed;
 
-    constructor() ERC20("Bond Ether", "bEth") {}
+    constructor() ERC20("Bond DAI", "bDAI") {}
 
     function bondAsset(uint256 _amount) external {
         dai.transferFrom(msg.sender, address(this), _amount);
