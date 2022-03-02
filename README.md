@@ -47,15 +47,14 @@ Each bDAI is convertible into a increasing quantity of DAI as interest accrues, 
 Rename the ``.env.example`` file to ``.env`` and replace the credentials necessary.
 
 **Note: the addresses are hardcoded on the contract for kovan testnet, if you want to deploy in another testnet or even deploy to mainnet, make sure to change the addresses on the contract* 
-
-### Deploy
-``npm run deploy`` 
-### Verify contract
-``npm run verify "CONTRACT ADDRESS"``
-
 ## Instaling
 ``$ npm install``
 
 ## Testing
 
 ``$ npm test``
+### Deploy
+``npm run deploy`` 
+### Verify contract
+``npm run verify "CONTRACT ADDRESS"``
+
