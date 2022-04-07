@@ -149,24 +149,15 @@ contract BondToken is ERC20Burnable, Ownable, Math {
         if (borrowed > percentage(collateralToUsd, maxLTV)) {
             _withdrawWethFromAave(collateral);
             uint256 amountDai = _convertEthToDai(collateral);
-            totalReserve += amountDai;
+            if (amountDai > borrowed) {
+                uint256 extraAmount = amountDai.sub(borrowed);
+                totalReserve += extraAmount;
+            }
+            _sendDaiToAave(amountDai);
             usersBorrowed[_user] = 0;
             usersCollateral[_user] = 0;
             totalCollateral -= collateral;
         }
-    }
-
-    function getExchangeRate() public view returns (uint256) {
-        if (totalSupply() == 0) {
-            return 1000000000000000000;
-        }
-        uint256 cash = getCash();
-        uint256 num = cash.add(totalBorrowed).add(totalReserve);
-        return getExp(num, totalSupply());
-    }
-
-    function getCash() public view returns (uint256) {
-        return totalDeposit.sub(totalBorrowed);
     }
 
     function harvestRewards() external onlyOwner {
@@ -228,6 +219,19 @@ contract BondToken is ERC20Burnable, Ownable, Math {
     function _getLatestPrice() public view returns (int256) {
         (, int256 price, , , ) = priceFeed.latestRoundData();
         return price * 10**10;
+    }
+
+    function getExchangeRate() public view returns (uint256) {
+        if (totalSupply() == 0) {
+            return 1000000000000000000;
+        }
+        uint256 cash = getCash();
+        uint256 num = cash.add(totalBorrowed).add(totalReserve);
+        return getExp(num, totalSupply());
+    }
+
+    function getCash() public view returns (uint256) {
+        return totalDeposit.sub(totalBorrowed);
     }
 
     function _utilizationRatio() public view returns (uint256) {
